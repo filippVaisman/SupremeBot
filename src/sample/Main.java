@@ -341,6 +341,10 @@ public class Main extends Application {
         return view;
     }
 
+    private void someFunc(){
+
+    }
+
 
     public static void main(String[] args) {
         SimpleHttpRequest req = new SimpleHttpRequest();
