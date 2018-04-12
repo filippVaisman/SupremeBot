@@ -306,8 +306,6 @@ public class Main extends Application {
     private void findColor(SimpleDomHandler handler){
 
         int length = handler.getElementsLengthByClass("style-images");
-
-        System.out.println(1);
         System.out.println(length);
         for(int i =0 ; i < length+1; i++){
             if(!handler.getElementById("style-name").getTextContent().equals(productLoader.getColor())){
