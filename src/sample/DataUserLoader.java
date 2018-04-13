@@ -1,6 +1,10 @@
 package sample;
 
 public class DataUserLoader {
+
+    private static DataUserLoader dataUserLoader;
+
+
     private String name;
     private String surname;
     private String email;
@@ -16,10 +20,11 @@ public class DataUserLoader {
     private String monthCardValid;
     private int yearCardValid;
     private int cvv;
-    
-    
-    
-    public DataUserLoader(String name, String surname, String email, String telephone, String address, String city, String postCode, String country, String cardType, String creditCardNumber, String monthCardValid, int yearCardValid, int cvv) {
+
+    private DataUserLoader() {}
+
+
+    public void setValues(String name, String surname, String email, String telephone, String address, String city, String postCode, String country, String cardType, String creditCardNumber, String monthCardValid, int yearCardValid, int cvv){
         this.name = name;
         this.surname = surname;
         this.email = email;
@@ -34,6 +39,15 @@ public class DataUserLoader {
         this.yearCardValid = yearCardValid;
         this.cvv = cvv;
     }
+
+
+    public static DataUserLoader getDataUserLoader(){
+
+        if(dataUserLoader == null)
+            dataUserLoader = new DataUserLoader();
+        return dataUserLoader;
+    }
+
 
 
     public String getName() {

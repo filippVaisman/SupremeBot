@@ -4,8 +4,6 @@ import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Worker;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -16,10 +14,9 @@ import javafx.scene.layout.*;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
-import org.w3c.dom.html.HTMLInputElement;
-import org.w3c.dom.html.HTMLSelectElement;
-import sample.HttpRequset.SimpleHttpRequest;
 import sample.JavaScript.SimpleDomHandler;
+
+
 
 
 public class Main extends Application {
@@ -29,14 +26,22 @@ public class Main extends Application {
     private DataUserLoader userLoader;
     private DataProductLoader productLoader;
     private Stage primaryStage;
+    private HandlerEventGenerator handlerEventGenerator;
+    private static Logger logger;
 
 
     @Override
     public void start(Stage primaryStage) throws Exception{
+
+        logger = new Logger();
         this.primaryStage = primaryStage;
-//        setPrimaryStage(primaryStage);
-        setSecondStage();
-//        setThirdStage();
+        try {
+            setSecondStage();
+        }catch (Exception e){
+        logger.log(e.getMessage());
+        e.printStackTrace();
+        }
+
     }
 
 
@@ -73,7 +78,8 @@ public class Main extends Application {
 
         goNext.setOnAction(event -> {
 
-            productLoader = new DataProductLoader(itemColor.getText(),itemSize.getText(),itemName.getText());
+            productLoader = DataProductLoader.getDataProductLoader();
+            productLoader.setValues(itemColor.getText(),itemSize.getText(),itemName.getText());
             thirdStage.hide();
             setPrimaryStage(primaryStage);
         });
@@ -162,7 +168,8 @@ public class Main extends Application {
             String monthCardValidUser = (monthCardValid.getSelectionModel().getSelectedItem());
             int yearCardValidUser= yearCardValid.getSelectionModel().getSelectedItem();
 
-            userLoader = new DataUserLoader(
+            userLoader = DataUserLoader.getDataUserLoader();
+            userLoader.setValues(
                     nameUser,surnameUser,emailUser,
                     telephoneUser,addressUser,
                     cityUser,postCodeUser,
@@ -198,7 +205,7 @@ public class Main extends Application {
 //                new ChangeListener<State>() {
 //                    public void changed(ObservableValue ov, State oldState, State newState) {
 //                        if (newState == State.SUCCEEDED) {
-//                            System.out.println(view.getEngine().getLocation());
+//                            logger.log(view.getEngine().getLocation());
 //                        }
 //                    }
 //        });
@@ -210,81 +217,17 @@ public class Main extends Application {
             view.getEngine().reload();
         });
 
+
+
         SimpleDomHandler handler= new SimpleDomHandler(view.getEngine());
-        getProduct.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                String className = "name";
+        handlerEventGenerator = new HandlerEventGenerator(handler);
+        getProduct.setOnAction(handlerEventGenerator.getProductHandler());
 
-                int length = handler.getElementsLengthByClass(className);
+        addToCart.setOnAction(handlerEventGenerator.getAddToCartHandler());
 
-                for(int i =0 ; i < length; i++){
-                    if(handler.getElementByClass(className,i).getTextContent().equals(productLoader.getProductName())){
-                        handler.clickElementByClass(className,i);
-                        break;
-                    }
-                }
-
-            }
-        });
-
-        addToCart.setOnAction((event)->{
-            //            for(let c = 0; c< document.getElementsByClassName('style-images').length;c++) {
-            findColor(handler);
-            findSize(handler);
-            handler.clickElementByClass("cart-button",0);
-            new Thread(()->{
-                try {
-                    Thread.sleep(500);
-                    handler.clickElementById("checkout-now");
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-            });
-        });
-
-        buy.setOnAction(event -> {
+        buy.setOnAction(handlerEventGenerator.getBuyHandler());
 
 
-//            handler.execute("document.getElementById('order_billing_name').value='"+userLoader.getName()+" "+userLoader.getSurname()+"'");
-
-            HTMLInputElement name = (HTMLInputElement) handler.execute("document.getElementById('order_billing_name')");
-            name.setValue(userLoader.getName()+" "+userLoader.getSurname());
-            ((HTMLInputElement) handler.execute("document.getElementById('order_email')")).setValue(userLoader.getEmail());
-
-            ((HTMLInputElement) handler.execute("document.getElementById('order_tel')")).setValue(userLoader.getTelephone());
-
-            ((HTMLInputElement) handler.execute("document.getElementById('order_billing_address')")).setValue(userLoader.getAddress());
-            ((HTMLInputElement) handler.execute("document.getElementById('order_billing_city')")).setValue(userLoader.getCity());
-            ((HTMLInputElement) handler.execute("document.getElementById('order_billing_zip')")).setValue(userLoader.getPostCode());
-            ((HTMLInputElement) handler.execute("document.getElementById('credit_card_n')")).setValue(userLoader.getcreditCardNumber());
-            ((HTMLInputElement) handler.execute("document.getElementById('credit_card_cvv')")).setValue(userLoader.getCvv()+"");
-
-
-
-            handler.execute(String.format("document.getElementById('order_billing_country').value='%s'",userLoader.getCountry()));
-            handler.clickElementById("order_terms");
-            handler.execute(String.format("document.getElementById('credit_card_type').value='%s'",userLoader.getCardType()));
-            handler.execute(String.format("document.getElementById('credit_card_month').value='%s'",userLoader.getmonthCardValid()));
-            handler.execute(String.format("document.getElementById('credit_card_year').value='%s'",userLoader.getYearCardValid()));
-
-
-
-            //Controls
-
-            System.out.println("Controls");
-
-            System.out.println("Country: "+((HTMLSelectElement)(handler.execute("document.getElementById('order_billing_country')"))).getValue());
-            System.out.println("Card type: "+((HTMLSelectElement)handler.execute("document.getElementById('credit_card_type')")).getValue());
-            System.out.println("Card valid month: "+((HTMLSelectElement)handler.execute("document.getElementById('credit_card_month')")).getValue());
-            System.out.println("Card valid year: "+((HTMLSelectElement) handler.execute("document.getElementById('credit_card_year')")).getValue());
-
-            // document.getElementById('credit_card_n').value="5169310006155203";
-            // $('#credit_card_type').get(0).selectedIndex =2;
-            // $('#order_billing_country').val('PL');
-
-        });
         root.add(view,0,1);
         root.add(box,0,0);
         primaryStage.setScene(new Scene(root, 640, 480));
@@ -292,12 +235,14 @@ public class Main extends Application {
         primaryStage.show();
     }
 
+
+
     private void findSize(SimpleDomHandler handler){
         int length = handler.getElementLengthById("size-options");
         for (int i =0 ; i < length;i++){
             if(handler.execute(String.format("document.getElementById('size-options').children[%d].text",i)).equals(productLoader.getSize())){
                 handler.execute(String.format("document.getElementById('size-options').value = document.getElementById('size-options').children[%d].value;",i));
-                System.out.println("Size found");
+                logger.log("Size found");
             }
         }
     }
@@ -306,17 +251,18 @@ public class Main extends Application {
     private void findColor(SimpleDomHandler handler){
 
         int length = handler.getElementsLengthByClass("style-images");
-        System.out.println(length);
+        logger.log(length);
         for(int i =0 ; i < length+1; i++){
             if(!handler.getElementById("style-name").getTextContent().equals(productLoader.getColor())){
                 handler.execute(String.format("document.getElementsByClassName('style-images')[%d].children[0].click();",i));
             }else{
-                System.out.println("Color found");
+                logger.log("Color found");
                 break;
             }
         }
 
     }
+
 
 
     private void addListener(WebEngine engine){
@@ -335,19 +281,14 @@ public class Main extends Application {
         WebView view = new WebView();
         view.setMinSize(640,480);
         WebEngine engine = view.getEngine();
-        System.out.println(engine.getUserAgent());
+        logger.log(engine.getUserAgent());
         engine.setUserAgent("Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Mobile Safari/537.36");
         engine.load("http://www.supremenewyork.com/mobile/#categories/new");
         return view;
     }
 
-    private void someFunc(){
-
-    }
-
 
     public static void main(String[] args) {
-        SimpleHttpRequest req = new SimpleHttpRequest();
         launch(args);
     }
 }
